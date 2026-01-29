@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/incidente.dart';
 import '../../domain/entities/viaje.dart';
 
@@ -25,7 +25,7 @@ class _IncidentesPageState extends State<IncidentesPage> {
   
   int? _selectedViaje;
   final _descripcionController = TextEditingController();
-  String _gravedad = 'baja';
+  String _gravedad = 'Baja';
   bool _resuelto = false;
 
   @override
@@ -122,7 +122,7 @@ class _IncidentesPageState extends State<IncidentesPage> {
       _editingId = incidente.id;
       _selectedViaje = incidente.viaje;
       _descripcionController.text = incidente.descripcion;
-      _gravedad = incidente.gravedad.toLowerCase();
+      _gravedad = incidente.gravedad;
       _resuelto = incidente.resuelto;
       _showForm = true;
     });
@@ -171,7 +171,7 @@ class _IncidentesPageState extends State<IncidentesPage> {
     setState(() {
       _selectedViaje = null;
       _descripcionController.clear();
-      _gravedad = 'baja';
+      _gravedad = 'Baja';
       _resuelto = false;
       _editingId = null;
       _showForm = false;
@@ -261,9 +261,9 @@ class _IncidentesPageState extends State<IncidentesPage> {
                 border: OutlineInputBorder(),
               ),
               items: const [
-                DropdownMenuItem(value: 'baja', child: Text('Baja')),
-                DropdownMenuItem(value: 'media', child: Text('Media')),
-                DropdownMenuItem(value: 'alta', child: Text('Alta')),
+                DropdownMenuItem(value: 'Baja', child: Text('Baja')),
+                DropdownMenuItem(value: 'Media', child: Text('Media')),
+                DropdownMenuItem(value: 'Alta', child: Text('Alta')),
               ],
               onChanged: (value) => setState(() => _gravedad = value!),
             ),

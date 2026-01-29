@@ -23,6 +23,7 @@ import 'app/private/tarjetas_page.dart';
 import 'app/private/boletos_page.dart';
 import 'app/public/home_page.dart';
 import 'app/private/usuarios_page.dart';
+import 'app/private/perfil_page.dart';
 import 'app/require_admin.dart';
 
 void main() {
@@ -79,6 +80,12 @@ class MyApp extends StatelessWidget {
           path: '/dashboard',
           builder: (context, state) => const RequireAuth(
             child: DashboardPage(),
+          ),
+        ),
+        GoRoute(
+          path: '/perfil',
+          builder: (context, state) => const RequireAuth(
+            child: PerfilPage(),
           ),
         ),
         // Rutas SOLO para administradores

@@ -52,12 +52,25 @@ class _TarjetasPageState extends State<TarjetasPage> {
   Future<void> _loadTarjetas() async {
     setState(() => _loading = true);
     try {
-      final response = await _tarjetaService.getAll();
+      final tarjetasResponse = await _tarjetaService.getAll();
+
+      if (!mounted) return;
+
+      final authProvider = context.read<AuthProvider>();
+      final user = authProvider.user;
+      final isAdmin = user?.isStaff == true || user?.isSuperuser == true;
+
+      var data = tarjetasResponse.results;
+      if (!isAdmin && user?.id != null) {
+        data = data.where((t) => t.usuario == user!.id).toList();
+      }
+
       setState(() {
-        _tarjetas = response.results;
+        _tarjetas = data;
         _loading = false;
       });
     } catch (e) {
+      print('❌ Error al cargar tarjetas: $e');
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -228,9 +241,13 @@ class _TarjetasPageState extends State<TarjetasPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.user;
+    final isAdmin = user?.isStaff == true || user?.isSuperuser == true;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mis Tarjetas'),
+        title: Text(isAdmin ? '💳 Tarjetas' : 'Mis Tarjetas'),
         backgroundColor: const Color(0xFF8e44ad),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -356,6 +373,7 @@ class _TarjetasPageState extends State<TarjetasPage> {
 
     return Column(
       children: _tarjetas.map((tarjeta) {
+        final usuarioNombre = _getUsuarioNombre(tarjeta);
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
@@ -371,6 +389,7 @@ class _TarjetasPageState extends State<TarjetasPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 4),
+                Text('Usuario: $usuarioNombre'),
                 Text('Saldo: \$${tarjeta.saldo}'),
                 Text('Expira: ${tarjeta.fechaExpiracion}'),
               ],
@@ -424,5 +443,17 @@ class _TarjetasPageState extends State<TarjetasPage> {
         );
       }).toList(),
     );
+  }
+
+  String _getUsuarioNombre(Tarjeta tarjeta) {
+    // Prioriza usuario_detalle del backend
+    final detalle = tarjeta.usuarioDetalle;
+    if (detalle != null) {
+      final nombre = detalle.nombreCompleto.trim();
+      if (nombre.isNotEmpty) return nombre;
+      if (detalle.username.isNotEmpty) return detalle.username;
+    }
+    // Fallback: usar id si no hay detalle
+    return 'Usuario #${tarjeta.usuario}';
   }
 }

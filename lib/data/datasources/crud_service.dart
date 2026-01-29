@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../config/api_constants.dart';
-import '../token_storage.dart';
-import '../../../domain/entities/paginated_response.dart';
+import '../../core/constants/api_constants.dart';
+import '../../core/utils/token_storage.dart';
+import '../../domain/entities/paginated_response.dart';
 
 class CrudService<T> {
   final String endpoint;
@@ -25,15 +25,13 @@ class CrudService<T> {
       if (token == null) {
         throw Exception('No hay token de acceso');
       }
-      final headers = ApiConstants.authHeaders(token);
-      return headers;
+      return ApiConstants.authHeaders(token);
     }
     return ApiConstants.jsonHeaders;
   }
 
   Future<PaginatedResponse<T>> getAll() async {
     final headers = await _getHeaders();
-    
     final response = await client.get(
       Uri.parse('${ApiConstants.baseUrl}$endpoint'),
       headers: headers,
@@ -41,37 +39,20 @@ class CrudService<T> {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-
-      // Soportar respuestas paginadas y listas simples (Mongo no pagina).
-      if (data is Map<String, dynamic> && data.containsKey('results')) {
-        return PaginatedResponse<T>(
-          count: data['count'] as int,
-          next: data['next'] as String?,
-          previous: data['previous'] as String?,
-          results: (data['results'] as List)
-              .map((item) => fromJson(item as Map<String, dynamic>))
-              .toList(),
-        );
-      }
-
-      if (data is List) {
-        return PaginatedResponse<T>(
-          count: data.length,
-          next: null,
-          previous: null,
-          results: data
-              .map((item) => fromJson(item as Map<String, dynamic>))
-              .toList(),
-        );
-      }
-
-      throw Exception('Formato de respuesta no soportado');
+      return PaginatedResponse<T>(
+        count: data['count'] as int,
+        next: data['next'] as String?,
+        previous: data['previous'] as String?,
+        results: (data['results'] as List)
+            .map((item) => fromJson(item as Map<String, dynamic>))
+            .toList(),
+      );
     } else {
       throw Exception('Error al obtener datos: ${response.body}');
     }
   }
 
-  Future<T> getById(dynamic id) async {
+  Future<T> getById(int id) async {
     final headers = await _getHeaders();
     final response = await client.get(
       Uri.parse('${ApiConstants.baseUrl}$endpoint$id/'),
@@ -100,7 +81,7 @@ class CrudService<T> {
     }
   }
 
-  Future<T> update(dynamic id, Map<String, dynamic> data) async {
+  Future<T> update(int id, Map<String, dynamic> data) async {
     final headers = await _getHeaders();
     final response = await client.put(
       Uri.parse('${ApiConstants.baseUrl}$endpoint$id/'),
@@ -115,7 +96,7 @@ class CrudService<T> {
     }
   }
 
-  Future<void> delete(dynamic id) async {
+  Future<void> delete(int id) async {
     final headers = await _getHeaders();
     final response = await client.delete(
       Uri.parse('${ApiConstants.baseUrl}$endpoint$id/'),

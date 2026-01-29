@@ -9,13 +9,6 @@ class UserModel extends User {
     super.lastName,
     super.isStaff,
     super.isSuperuser,
-    super.isChofer,
-    super.isAsistente,
-    super.choferId,
-    super.choferDni,
-    super.choferLicencia,
-    super.choferTelefono,
-    super.choferFechaContratacion,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -27,13 +20,6 @@ class UserModel extends User {
       lastName: json['last_name'] as String?,
       isStaff: json['is_staff'] as bool? ?? false,
       isSuperuser: json['is_superuser'] as bool? ?? false,
-      isChofer: json['is_chofer'] as bool? ?? false,
-      isAsistente: json['is_asistente'] as bool? ?? false,
-      choferId: json['chofer_id'] as int?,
-      choferDni: json['chofer_dni'] as String?,
-      choferLicencia: json['chofer_licencia'] as String?,
-      choferTelefono: json['chofer_telefono'] as String?,
-      choferFechaContratacion: json['chofer_fecha_contratacion'] as String?,
     );
   }
 
@@ -46,14 +32,6 @@ class UserModel extends User {
       'last_name': lastName,
       'is_staff': isStaff,
       'is_superuser': isSuperuser,
-      'is_chofer': isChofer,
-      'is_asistente': isAsistente,
-      'chofer_id': choferId,
-      'chofer_dni': choferDni,
-      'chofer_licencia': choferLicencia,
-      'chofer_telefono': choferTelefono,
-      'chofer_fecha_contratacion': choferFechaContratacion,
     };
   }
 }
-

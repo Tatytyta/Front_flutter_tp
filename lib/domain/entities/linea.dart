@@ -1,5 +1,5 @@
 class Linea {
-  final int? id;
+  final String? id;
   final int numero;
   final String nombre;
   final String? color;
@@ -17,8 +17,10 @@ class Linea {
 
   factory Linea.fromJson(Map<String, dynamic> json) {
     return Linea(
-      id: json['id'] as int?,
-      numero: json['numero'] as int,
+        id: json['id']?.toString(),
+        numero: json['numero'] is int
+          ? json['numero'] as int
+          : int.tryParse(json['numero'].toString()) ?? 0,
       nombre: json['nombre'] as String,
       color: json['color'] as String?,
       descripcion: json['descripcion'] as String?,

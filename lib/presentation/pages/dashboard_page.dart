@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../src/auth/auth_provider.dart';
+import '../providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -174,6 +174,7 @@ class DashboardPage extends StatelessWidget {
                                   color: Colors.white.withOpacity(0.3),
                                   width: 1,
                                 ),
+                                backdropFilter: null,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,

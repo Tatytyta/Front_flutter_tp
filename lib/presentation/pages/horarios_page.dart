@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/horario.dart';
 import '../../domain/entities/ruta.dart';
 
@@ -26,7 +26,7 @@ class _HorariosPageState extends State<HorariosPage> {
   final _horaSalidaController = TextEditingController();
   final _horaLlegadaController = TextEditingController();
   final _diasSemanaController = TextEditingController();
-  String? _selectedRuta;
+  int? _selectedRuta;
 
   @override
   void initState() {
@@ -84,30 +84,10 @@ class _HorariosPageState extends State<HorariosPage> {
       return;
     }
 
-    String? _toHms(String raw) {
-      final parts = raw.split(':');
-      if (parts.length < 2 || parts.length > 3) return null;
-      final h = int.tryParse(parts[0]);
-      final m = int.tryParse(parts[1]);
-      final s = parts.length == 3 ? int.tryParse(parts[2]) ?? 0 : 0;
-      if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59 || s < 0 || s > 59) return null;
-      return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    }
-
-    final horaSalida = _toHms(_horaSalidaController.text.trim());
-    final horaLlegada = _toHms(_horaLlegadaController.text.trim());
-
-    if (horaSalida == null || horaLlegada == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Formato de hora inválido. Usa hh:mm o hh:mm:ss')),
-      );
-      return;
-    }
-
     final data = {
       'ruta': _selectedRuta!,
-      'hora_salida': horaSalida,
-      'hora_llegada': horaLlegada,
+      'hora_salida': _horaSalidaController.text,
+      'hora_llegada': _horaLlegadaController.text,
       'dias_semana': _diasSemanaController.text.isEmpty ? 'L,M,X,J,V' : _diasSemanaController.text,
     };
 
@@ -199,7 +179,7 @@ class _HorariosPageState extends State<HorariosPage> {
     });
   }
 
-  String _getRutaNombre(String rutaId) {
+  String _getRutaNombre(int rutaId) {
     final ruta = _rutas.where((r) => r.id == rutaId).firstOrNull;
     return ruta?.nombre ?? 'N/A';
   }
@@ -248,7 +228,7 @@ class _HorariosPageState extends State<HorariosPage> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<int>(
               value: _selectedRuta,
               decoration: const InputDecoration(
                 labelText: 'Ruta *',

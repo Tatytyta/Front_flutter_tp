@@ -1,5 +1,5 @@
 class Parada {
-  final int? id;
+  final String? id;
   final String nombre;
   final String direccion;
   final double? latitud;
@@ -15,11 +15,15 @@ class Parada {
 
   factory Parada.fromJson(Map<String, dynamic> json) {
     return Parada(
-      id: json['id'] as int?,
+      id: json['id']?.toString(),
       nombre: json['nombre'] as String,
       direccion: json['direccion'] as String,
-      latitud: json['latitud'] != null ? (json['latitud'] as num).toDouble() : null,
-      longitud: json['longitud'] != null ? (json['longitud'] as num).toDouble() : null,
+      latitud: json['latitud'] != null
+          ? double.tryParse(json['latitud'].toString())
+          : null,
+      longitud: json['longitud'] != null
+          ? double.tryParse(json['longitud'].toString())
+          : null,
     );
   }
 

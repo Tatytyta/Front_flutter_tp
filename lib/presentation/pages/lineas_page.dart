@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/linea.dart';
 import '../widgets/common_widgets.dart';
 
@@ -19,7 +19,7 @@ class _LineasPageState extends State<LineasPage> {
   List<Linea> _lineas = [];
   bool _loading = true;
   bool _showForm = false;
-  String? _editingId;
+  int? _editingId;
   
   final _numeroController = TextEditingController();
   final _nombreController = TextEditingController();
@@ -120,7 +120,7 @@ class _LineasPageState extends State<LineasPage> {
     });
   }
 
-  Future<void> _handleDelete(String id) async {
+  Future<void> _handleDelete(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -342,7 +342,7 @@ class _LineasPageState extends State<LineasPage> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Color(0xFFe74c3c)),
-                        onPressed: linea.id == null ? null : () => _handleDelete(linea.id!),
+                        onPressed: () => _handleDelete(linea.id!),
                         tooltip: 'Eliminar',
                       ),
                     ],

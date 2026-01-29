@@ -19,7 +19,7 @@ class _ParadasPageState extends State<ParadasPage> {
   List<Parada> _paradas = [];
   bool _loading = true;
   bool _showForm = false;
-  int? _editingId;
+  String? _editingId;
   
   final _nombreController = TextEditingController();
   final _direccionController = TextEditingController();
@@ -120,7 +120,7 @@ class _ParadasPageState extends State<ParadasPage> {
     });
   }
 
-  Future<void> _handleDelete(int id) async {
+  Future<void> _handleDelete(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -323,7 +323,7 @@ class _ParadasPageState extends State<ParadasPage> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Color(0xFFe74c3c)),
-                        onPressed: () => _handleDelete(parada.id!),
+                        onPressed: parada.id == null ? null : () => _handleDelete(parada.id!),
                         tooltip: 'Eliminar',
                       ),
                     ],

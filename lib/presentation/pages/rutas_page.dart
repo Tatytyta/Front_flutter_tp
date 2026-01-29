@@ -1,46 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
-import '../../domain/entities/incidente.dart';
-import '../../domain/entities/viaje.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
+import '../../domain/entities/ruta.dart';
+import '../../domain/entities/linea.dart';
 
-class IncidentesPage extends StatefulWidget {
-  const IncidentesPage({super.key});
+class RutasPage extends StatefulWidget {
+  const RutasPage({super.key});
 
   @override
-  State<IncidentesPage> createState() => _IncidentesPageState();
+  State<RutasPage> createState() => _RutasPageState();
 }
 
-class _IncidentesPageState extends State<IncidentesPage> {
-  late final CrudService<Incidente> _incidenteService;
-  late final CrudService<Viaje> _viajeService;
-  List<Incidente> _incidentes = [];
-  List<Viaje> _viajes = [];
+class _RutasPageState extends State<RutasPage> {
+  late final CrudService<Ruta> _rutaService;
+  late final CrudService<Linea> _lineaService;
+  List<Ruta> _rutas = [];
+  List<Linea> _lineas = [];
   bool _loading = true;
   bool _showForm = false;
   int? _editingId;
   
-  int? _selectedViaje;
+  final _nombreController = TextEditingController();
   final _descripcionController = TextEditingController();
-  String _gravedad = 'baja';
-  bool _resuelto = false;
+  int? _selectedLineaNumero;
 
   @override
   void initState() {
     super.initState();
-    _incidenteService = CrudService<Incidente>(
-      endpoint: ApiConstants.incidentesEndpoint,
-      fromJson: (json) => Incidente.fromJson(json),
+    _rutaService = CrudService<Ruta>(
+      endpoint: ApiConstants.rutasEndpoint,
+      fromJson: (json) => Ruta.fromJson(json),
       client: http.Client(),
       tokenStorage: TokenStorage(),
       requiresAuth: true,
     );
-    _viajeService = CrudService<Viaje>(
-      endpoint: ApiConstants.viajesEndpoint,
-      fromJson: (json) => Viaje.fromJson(json),
+    _lineaService = CrudService<Linea>(
+      endpoint: ApiConstants.lineasEndpoint,
+      fromJson: (json) => Linea.fromJson(json),
       client: http.Client(),
       tokenStorage: TokenStorage(),
       requiresAuth: true,
@@ -50,6 +49,7 @@ class _IncidentesPageState extends State<IncidentesPage> {
 
   @override
   void dispose() {
+    _nombreController.dispose();
     _descripcionController.dispose();
     super.dispose();
   }
@@ -57,11 +57,11 @@ class _IncidentesPageState extends State<IncidentesPage> {
   Future<void> _loadData() async {
     setState(() => _loading = true);
     try {
-      final incidentesResponse = await _incidenteService.getAll();
-      final viajesResponse = await _viajeService.getAll();
+      final rutasResponse = await _rutaService.getAll();
+      final lineasResponse = await _lineaService.getAll();
       setState(() {
-        _incidentes = incidentesResponse.results;
-        _viajes = viajesResponse.results;
+        _rutas = rutasResponse.results;
+        _lineas = lineasResponse.results;
         _loading = false;
       });
     } catch (e) {
@@ -75,34 +75,33 @@ class _IncidentesPageState extends State<IncidentesPage> {
   }
 
   Future<void> _handleSubmit() async {
-    if (_descripcionController.text.isEmpty) {
+    if (_nombreController.text.isEmpty || _selectedLineaNumero == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Descripción es requerida')),
+        const SnackBar(content: Text('Nombre y Línea son requeridos')),
       );
       return;
     }
 
     final data = {
-      if (_selectedViaje != null) 'viaje': _selectedViaje,
-      'descripcion': _descripcionController.text,
-      'fecha_incidente': DateTime.now().toIso8601String(),
-      'gravedad': _gravedad,
-      'resuelto': _resuelto,
+      // Backend espera clave linea_numero (PK int); las líneas pueden venir de Mongo.
+      'linea_numero': _selectedLineaNumero!,
+      'nombre': _nombreController.text,
+      'descripcion': _descripcionController.text.isEmpty ? null : _descripcionController.text,
     };
 
     try {
       if (_editingId != null) {
-        await _incidenteService.update(_editingId!, data);
+        await _rutaService.update(_editingId!, data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Incidente actualizado')),
+            const SnackBar(content: Text('✅ Ruta actualizada')),
           );
         }
       } else {
-        await _incidenteService.create(data);
+        await _rutaService.create(data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Incidente creado')),
+            const SnackBar(content: Text('✅ Ruta creada')),
           );
         }
       }
@@ -117,13 +116,12 @@ class _IncidentesPageState extends State<IncidentesPage> {
     }
   }
 
-  void _handleEdit(Incidente incidente) {
+  void _handleEdit(Ruta ruta) {
     setState(() {
-      _editingId = incidente.id;
-      _selectedViaje = incidente.viaje;
-      _descripcionController.text = incidente.descripcion;
-      _gravedad = incidente.gravedad.toLowerCase();
-      _resuelto = incidente.resuelto;
+      _editingId = ruta.id;
+      _selectedLineaNumero = ruta.lineaNumero ?? int.tryParse(ruta.linea);
+      _nombreController.text = ruta.nombre;
+      _descripcionController.text = ruta.descripcion ?? '';
       _showForm = true;
     });
   }
@@ -133,7 +131,7 @@ class _IncidentesPageState extends State<IncidentesPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: const Text('¿Eliminar este incidente?'),
+        content: const Text('¿Eliminar esta ruta?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -150,10 +148,10 @@ class _IncidentesPageState extends State<IncidentesPage> {
 
     if (confirm == true) {
       try {
-        await _incidenteService.delete(id);
+        await _rutaService.delete(id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Incidente eliminado')),
+            const SnackBar(content: Text('✅ Ruta eliminada')),
           );
         }
         _loadData();
@@ -169,35 +167,25 @@ class _IncidentesPageState extends State<IncidentesPage> {
 
   void _resetForm() {
     setState(() {
-      _selectedViaje = null;
+      _nombreController.clear();
       _descripcionController.clear();
-      _gravedad = 'baja';
-      _resuelto = false;
+      _selectedLineaNumero = null;
       _editingId = null;
       _showForm = false;
     });
   }
 
-  String _getViajeInfo(int? viajeId) {
-    if (viajeId == null) return 'General';
-    return 'Viaje #$viajeId';
-  }
-
-  Color _getGravedadColor(String gravedad) {
-    switch (gravedad.toLowerCase()) {
-      case 'baja': return Colors.green;
-      case 'media': return Colors.orange;
-      case 'alta': return Colors.red;
-      default: return Colors.grey;
-    }
+  String _getLineaNombre(int lineaNumero) {
+    final linea = _lineas.where((l) => l.numero == lineaNumero).firstOrNull;
+    return linea != null ? '${linea.numero} - ${linea.nombre}' : 'N/A';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Incidentes'),
-        backgroundColor: const Color(0xFFc0392b),
+        title: const Text('Rutas'),
+        backgroundColor: const Color(0xFF9b59b6),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/dashboard'),
@@ -232,56 +220,40 @@ class _IncidentesPageState extends State<IncidentesPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _editingId != null ? 'Editar Incidente' : 'Nuevo Incidente',
+              _editingId != null ? 'Editar Ruta' : 'Nueva Ruta',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<int?>(
-              value: _selectedViaje,
+            DropdownButtonFormField<int>(
+              value: _selectedLineaNumero,
               decoration: const InputDecoration(
-                labelText: 'Viaje (opcional)',
+                labelText: 'Línea *',
                 border: OutlineInputBorder(),
               ),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('General / Sin viaje')),
-                ..._viajes.map((viaje) {
-                  return DropdownMenuItem(
-                    value: viaje.id,
-                    child: Text('Viaje #${viaje.id}'),
-                  );
-                }),
-              ],
-              onChanged: (value) => setState(() => _selectedViaje = value),
+              items: _lineas.map((linea) {
+                return DropdownMenuItem(
+                  value: linea.numero,
+                  child: Text('${linea.numero} - ${linea.nombre}'),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedLineaNumero = value),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _gravedad,
+            TextField(
+              controller: _nombreController,
               decoration: const InputDecoration(
-                labelText: 'Gravedad *',
+                labelText: 'Nombre *',
                 border: OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(value: 'baja', child: Text('Baja')),
-                DropdownMenuItem(value: 'media', child: Text('Media')),
-                DropdownMenuItem(value: 'alta', child: Text('Alta')),
-              ],
-              onChanged: (value) => setState(() => _gravedad = value!),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _descripcionController,
               decoration: const InputDecoration(
-                labelText: 'Descripción *',
+                labelText: 'Descripción',
                 border: OutlineInputBorder(),
               ),
-              maxLines: 4,
-            ),
-            const SizedBox(height: 16),
-            CheckboxListTile(
-              title: const Text('Incidente resuelto'),
-              value: _resuelto,
-              onChanged: (value) => setState(() => _resuelto = value ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
+              maxLines: 2,
             ),
             const SizedBox(height: 16),
             Row(
@@ -307,62 +279,43 @@ class _IncidentesPageState extends State<IncidentesPage> {
   }
 
   Widget _buildList() {
-    if (_incidentes.isEmpty) {
+    if (_rutas.isEmpty) {
       return const Card(
         child: Padding(
           padding: EdgeInsets.all(32),
           child: Center(
-            child: Text('No hay incidentes registrados'),
+            child: Text('No hay rutas registradas'),
           ),
         ),
       );
     }
 
     return Column(
-      children: _incidentes.map((incidente) {
-        final fecha = DateTime.parse(incidente.fecha);
+      children: _rutas.map((ruta) {
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _getGravedadColor(incidente.gravedad),
-              child: const Icon(Icons.warning, color: Colors.white),
+            leading: const CircleAvatar(
+              backgroundColor: Color(0xFF9b59b6),
+              child: Icon(Icons.map, color: Colors.white),
             ),
-            title: Text(incidente.descripcion, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(ruta.nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Viaje: ${_getViajeInfo(incidente.viaje)}'),
-                Text('Fecha: ${fecha.day}/${fecha.month}/${fecha.year}'),
-                Text('Gravedad: ${incidente.gravedad}'),
+                Text('Línea: ${_getLineaNombre(ruta.linea)}'),
               ],
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: incidente.resuelto ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: incidente.resuelto ? Colors.green : Colors.red),
-                  ),
-                  child: Text(
-                    incidente.resuelto ? 'Resuelto' : 'Pendiente',
-                    style: TextStyle(
-                      color: incidente.resuelto ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
                 IconButton(
                   icon: const Icon(Icons.edit, color: Color(0xFFf39c12)),
-                  onPressed: () => _handleEdit(incidente),
+                  onPressed: () => _handleEdit(ruta),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Color(0xFFe74c3c)),
-                  onPressed: () => _handleDelete(incidente.id!),
+                  onPressed: () => _handleDelete(ruta.id!),
                 ),
               ],
             ),

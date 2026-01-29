@@ -1,6 +1,6 @@
 class Horario {
   final int? id;
-  final int ruta;
+  final String ruta;
   final String horaSalida;
   final String horaLlegada;
   final String diasSemana;
@@ -15,7 +15,7 @@ class Horario {
 
   factory Horario.fromJson(Map<String, dynamic> json) => Horario(
         id: json['id'] as int?,
-        ruta: json['ruta'] as int,
+        ruta: json['ruta']?.toString() ?? '',
         horaSalida: json['hora_salida'] as String,
         horaLlegada: json['hora_llegada'] as String,
         diasSemana: json['dias_semana'] as String,

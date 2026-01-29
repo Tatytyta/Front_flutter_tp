@@ -21,11 +21,17 @@ class _RutasPageState extends State<RutasPage> {
   List<Linea> _lineas = [];
   bool _loading = true;
   bool _showForm = false;
-  int? _editingId;
+  String? _editingId;
   
   final _nombreController = TextEditingController();
   final _descripcionController = TextEditingController();
-  int? _selectedLinea;
+  int? _selectedLineaNumero;
+
+  int? _safeSelectedLineaNumero() {
+    if (_selectedLineaNumero == null) return null;
+    final exists = _lineas.any((l) => l.numero == _selectedLineaNumero);
+    return exists ? _selectedLineaNumero : null;
+  }
 
   @override
   void initState() {
@@ -75,15 +81,23 @@ class _RutasPageState extends State<RutasPage> {
   }
 
   Future<void> _handleSubmit() async {
-    if (_nombreController.text.isEmpty || _selectedLinea == null) {
+    if (_nombreController.text.isEmpty || _selectedLineaNumero == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nombre y Línea son requeridos')),
       );
       return;
     }
 
+    final selectedLinea = _lineas.firstWhere(
+      (l) => l.numero == _selectedLineaNumero,
+      orElse: () => _lineas.isNotEmpty ? _lineas.first : Linea(id: null, numero: 0, nombre: ''),
+    );
+
+    final lineaNumero = selectedLinea.numero;
+
     final data = {
-      'linea': _selectedLinea!,
+      // Enviar numero de línea porque el backend espera PK int; las líneas vienen de Mongo con id string.
+      'linea_numero': lineaNumero,
       'nombre': _nombreController.text,
       'descripcion': _descripcionController.text.isEmpty ? null : _descripcionController.text,
     };
@@ -118,14 +132,14 @@ class _RutasPageState extends State<RutasPage> {
   void _handleEdit(Ruta ruta) {
     setState(() {
       _editingId = ruta.id;
-      _selectedLinea = ruta.linea;
+      _selectedLineaNumero = ruta.lineaNumero ?? int.tryParse(ruta.linea);
       _nombreController.text = ruta.nombre;
       _descripcionController.text = ruta.descripcion ?? '';
       _showForm = true;
     });
   }
 
-  Future<void> _handleDelete(int id) async {
+  Future<void> _handleDelete(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -168,14 +182,17 @@ class _RutasPageState extends State<RutasPage> {
     setState(() {
       _nombreController.clear();
       _descripcionController.clear();
-      _selectedLinea = null;
+      _selectedLineaNumero = null;
       _editingId = null;
       _showForm = false;
     });
   }
 
-  String _getLineaNombre(int lineaId) {
-    final linea = _lineas.where((l) => l.id == lineaId).firstOrNull;
+  String _getLineaNombre(Ruta ruta) {
+    final numero = ruta.lineaNumero ?? int.tryParse(ruta.linea);
+    final linea = numero != null
+        ? _lineas.where((l) => l.numero == numero).firstOrNull
+        : _lineas.where((l) => l.id == ruta.linea).firstOrNull;
     return linea != null ? '${linea.numero} - ${linea.nombre}' : 'N/A';
   }
 
@@ -224,18 +241,18 @@ class _RutasPageState extends State<RutasPage> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<int>(
-              value: _selectedLinea,
+                  value: _safeSelectedLineaNumero(),
               decoration: const InputDecoration(
                 labelText: 'Línea *',
                 border: OutlineInputBorder(),
               ),
               items: _lineas.map((linea) {
                 return DropdownMenuItem(
-                  value: linea.id,
+                  value: linea.numero,
                   child: Text('${linea.numero} - ${linea.nombre}'),
                 );
               }).toList(),
-              onChanged: (value) => setState(() => _selectedLinea = value),
+              onChanged: (value) => setState(() => _selectedLineaNumero = value),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -302,7 +319,7 @@ class _RutasPageState extends State<RutasPage> {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Línea: ${_getLineaNombre(ruta.linea)}'),
+                Text('Línea: ${_getLineaNombre(ruta)}'),
               ],
             ),
             trailing: Row(
@@ -314,7 +331,7 @@ class _RutasPageState extends State<RutasPage> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Color(0xFFe74c3c)),
-                  onPressed: () => _handleDelete(ruta.id!),
+                  onPressed: ruta.id == null ? null : () => _handleDelete(ruta.id!),
                 ),
               ],
             ),

@@ -1,6 +1,6 @@
 class Viaje {
   final int? id;
-  final int ruta;
+  final String ruta;
   final int vehiculo;
   final int chofer;
   final String fecha;
@@ -21,7 +21,7 @@ class Viaje {
 
   factory Viaje.fromJson(Map<String, dynamic> json) => Viaje(
         id: json['id'] as int?,
-        ruta: json['ruta'] as int,
+        ruta: json['ruta']?.toString() ?? '',
         vehiculo: json['vehiculo'] as int,
         chofer: json['chofer'] as int,
         fecha: json['fecha'] as String,

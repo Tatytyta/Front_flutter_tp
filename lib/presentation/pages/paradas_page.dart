@@ -1,87 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
-import '../../domain/entities/vehiculo.dart';
-import '../../domain/entities/linea.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
+import '../../domain/entities/parada.dart';
 import '../widgets/common_widgets.dart';
 
-class VehiculosPage extends StatefulWidget {
-  const VehiculosPage({super.key});
+class ParadasPage extends StatefulWidget {
+  const ParadasPage({super.key});
 
   @override
-  State<VehiculosPage> createState() => _VehiculosPageState();
+  State<ParadasPage> createState() => _ParadasPageState();
 }
 
-class _VehiculosPageState extends State<VehiculosPage> {
-  late final CrudService<Vehiculo> _vehiculoService;
-  late final CrudService<Linea> _lineaService;
-  List<Vehiculo> _vehiculos = [];
-  List<Linea> _lineas = [];
+class _ParadasPageState extends State<ParadasPage> {
+  late final CrudService<Parada> _paradaService;
+  List<Parada> _paradas = [];
   bool _loading = true;
   bool _showForm = false;
   int? _editingId;
   
-  final _patenteController = TextEditingController();
-  // Marca se elimina por solicitud
-  final _modeloController = TextEditingController();
-  final _capacidadController = TextEditingController();
-  final _anioController = TextEditingController(text: DateTime.now().year.toString());
+  final _nombreController = TextEditingController();
+  final _direccionController = TextEditingController();
+  final _latitudController = TextEditingController();
+  final _longitudController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _vehiculoService = CrudService<Vehiculo>(
-      endpoint: ApiConstants.vehiculosEndpoint,
-      fromJson: (json) => Vehiculo.fromJson(json),
+    _paradaService = CrudService<Parada>(
+      endpoint: ApiConstants.paradasEndpoint,
+      fromJson: (json) => Parada.fromJson(json),
       client: http.Client(),
       tokenStorage: TokenStorage(),
       requiresAuth: true,
     );
-    _lineaService = CrudService<Linea>(
-      endpoint: ApiConstants.lineasEndpoint,
-      fromJson: (json) => Linea.fromJson(json),
-      client: http.Client(),
-      tokenStorage: TokenStorage(),
-      requiresAuth: true,
-    );
-    _loadData();
+    _loadParadas();
   }
 
   @override
   void dispose() {
-    _patenteController.dispose();
-    _modeloController.dispose();
-    _capacidadController.dispose();
-    _anioController.dispose();
+    _nombreController.dispose();
+    _direccionController.dispose();
+    _latitudController.dispose();
+    _longitudController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadParadas() async {
     setState(() => _loading = true);
     try {
-      final vehiculosResponse = await _vehiculoService.getAll();
-      final lineasResponse = await _lineaService.getAll();
+      final response = await _paradaService.getAll();
       setState(() {
-        _vehiculos = vehiculosResponse.results;
-        _lineas = lineasResponse.results;
+        _paradas = response.results;
         _loading = false;
       });
     } catch (e) {
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: $e')),
+          SnackBar(content: Text('Error al cargar paradas: $e')),
         );
       }
     }
   }
 
   Future<void> _handleSubmit() async {
-    if (_patenteController.text.isEmpty ||
-        _capacidadController.text.isEmpty || _anioController.text.isEmpty) {
+    if (_nombreController.text.isEmpty || _direccionController.text.isEmpty ||
+        _latitudController.text.isEmpty || _longitudController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Todos los campos son requeridos')),
       );
@@ -89,30 +76,30 @@ class _VehiculosPageState extends State<VehiculosPage> {
     }
 
     final data = {
-      'patente': _patenteController.text,
-      'modelo': _modeloController.text.isEmpty ? null : _modeloController.text,
-      'capacidad': int.parse(_capacidadController.text),
-      'anio': int.parse(_anioController.text),
+      'nombre': _nombreController.text,
+      'direccion': _direccionController.text,
+      'latitud': double.parse(_latitudController.text),
+      'longitud': double.parse(_longitudController.text),
     };
 
     try {
       if (_editingId != null) {
-        await _vehiculoService.update(_editingId!, data);
+        await _paradaService.update(_editingId!, data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Vehículo actualizado correctamente')),
+            const SnackBar(content: Text('✅ Parada actualizada correctamente')),
           );
         }
       } else {
-        await _vehiculoService.create(data);
+        await _paradaService.create(data);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Vehículo creado correctamente')),
+            const SnackBar(content: Text('✅ Parada creada correctamente')),
           );
         }
       }
       _resetForm();
-      _loadData();
+      _loadParadas();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -122,13 +109,13 @@ class _VehiculosPageState extends State<VehiculosPage> {
     }
   }
 
-  void _handleEdit(Vehiculo vehiculo) {
+  void _handleEdit(Parada parada) {
     setState(() {
-      _editingId = vehiculo.id;
-      _patenteController.text = vehiculo.patente;
-      _modeloController.text = vehiculo.modelo ?? '';
-      _capacidadController.text = vehiculo.capacidad.toString();
-      _anioController.text = vehiculo.anio?.toString() ?? '';
+      _editingId = parada.id;
+      _nombreController.text = parada.nombre;
+      _direccionController.text = parada.direccion;
+      _latitudController.text = parada.latitud.toString();
+      _longitudController.text = parada.longitud.toString();
       _showForm = true;
     });
   }
@@ -138,7 +125,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar eliminación'),
-        content: const Text('¿Estás seguro de eliminar este vehículo?'),
+        content: const Text('¿Estás seguro de eliminar esta parada?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -155,13 +142,13 @@ class _VehiculosPageState extends State<VehiculosPage> {
 
     if (confirm == true) {
       try {
-        await _vehiculoService.delete(id);
+        await _paradaService.delete(id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Vehículo eliminado')),
+            const SnackBar(content: Text('✅ Parada eliminada')),
           );
         }
-        _loadData();
+        _loadParadas();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -174,26 +161,21 @@ class _VehiculosPageState extends State<VehiculosPage> {
 
   void _resetForm() {
     setState(() {
-      _patenteController.clear();
-      _modeloController.clear();
-      _capacidadController.clear();
-      _anioController.text = DateTime.now().year.toString();
+      _nombreController.clear();
+      _direccionController.clear();
+      _latitudController.clear();
+      _longitudController.clear();
       _editingId = null;
       _showForm = false;
     });
-  }
-
-  String _getLineaNombre(int lineaId) {
-    final linea = _lineas.where((l) => l.id == lineaId).firstOrNull;
-    return linea != null ? '${linea.numero} - ${linea.nombre}' : 'N/A';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Vehículos'),
-        backgroundColor: const Color(0xFFe67e22),
+        title: const Text('Paradas'),
+        backgroundColor: const Color(0xFF2ecc71),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/dashboard'),
@@ -202,7 +184,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
           IconButton(
             icon: Icon(_showForm ? Icons.close : Icons.add),
             onPressed: () => setState(() => _showForm = !_showForm),
-            tooltip: _showForm ? 'Cancelar' : 'Nuevo Vehículo',
+            tooltip: _showForm ? 'Cancelar' : 'Nueva Parada',
           ),
         ],
       ),
@@ -229,58 +211,51 @@ class _VehiculosPageState extends State<VehiculosPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _editingId != null ? 'Editar Vehículo' : 'Nuevo Vehículo',
+              _editingId != null ? 'Editar Parada' : 'Nueva Parada',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _patenteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Patente *',
-                      hintText: 'Ej: ABC123',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextField(
-                    controller: _modeloController,
-                    decoration: const InputDecoration(
-                      labelText: 'Modelo *',
-                      hintText: 'Ej: Mercedes Benz',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
+            TextField(
+              controller: _nombreController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre *',
+                hintText: 'Ej: Plaza Central',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _direccionController,
+              decoration: const InputDecoration(
+                labelText: 'Dirección *',
+                hintText: 'Ej: Av. Principal 123',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _capacidadController,
+                    controller: _latitudController,
                     decoration: const InputDecoration(
-                      labelText: 'Capacidad *',
-                      hintText: 'Ej: 40',
+                      labelText: 'Latitud *',
+                      hintText: 'Ej: -12.0464',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextField(
-                    controller: _anioController,
+                    controller: _longitudController,
                     decoration: const InputDecoration(
-                      labelText: 'Año *',
+                      labelText: 'Longitud *',
+                      hintText: 'Ej: -77.0428',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                   ),
                 ),
               ],
@@ -309,12 +284,12 @@ class _VehiculosPageState extends State<VehiculosPage> {
   }
 
   Widget _buildTable() {
-    if (_vehiculos.isEmpty) {
+    if (_paradas.isEmpty) {
       return const Card(
         child: Padding(
           padding: EdgeInsets.all(32),
           child: Center(
-            child: Text('No hay vehículos registrados'),
+            child: Text('No hay paradas registradas'),
           ),
         ),
       );
@@ -326,31 +301,29 @@ class _VehiculosPageState extends State<VehiculosPage> {
         child: DataTable(
           headingRowColor: MaterialStateProperty.all(const Color(0xFF34495e)),
           columns: const [
-            DataColumn(label: Text('Patente', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Modelo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Capacidad', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Año', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Nombre', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Dirección', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Coordenadas', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Acciones', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
           ],
-          rows: _vehiculos.map((vehiculo) {
+          rows: _paradas.map((parada) {
             return DataRow(
               cells: [
-                DataCell(Text(vehiculo.patente)),
-                DataCell(Text(vehiculo.modelo ?? 'N/A')),
-                DataCell(Text(vehiculo.capacidad.toString())),
-                DataCell(Text(vehiculo.anio?.toString() ?? 'N/A')),
+                DataCell(Text(parada.nombre)),
+                DataCell(Text(parada.direccion)),
+                DataCell(Text('${parada.latitud?.toStringAsFixed(4) ?? 'N/A'}, ${parada.longitud?.toStringAsFixed(4) ?? 'N/A'}')),
                 DataCell(
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit, color: Color(0xFFf39c12)),
-                        onPressed: () => _handleEdit(vehiculo),
+                        onPressed: () => _handleEdit(parada),
                         tooltip: 'Editar',
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Color(0xFFe74c3c)),
-                        onPressed: () => _handleDelete(vehiculo.id!),
+                        onPressed: () => _handleDelete(parada.id!),
                         tooltip: 'Eliminar',
                       ),
                     ],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/mantenimiento.dart';
 import '../../domain/entities/vehiculo.dart';
 
@@ -24,7 +24,7 @@ class _MantenimientosPageState extends State<MantenimientosPage> {
   int? _editingId;
   
   int? _selectedVehiculo;
-  String _tipo = 'preventivo';
+  String _tipo = 'Preventivo';
   DateTime _fecha = DateTime.now();
   final _descripcionController = TextEditingController();
   final _costoController = TextEditingController();
@@ -173,7 +173,7 @@ class _MantenimientosPageState extends State<MantenimientosPage> {
   void _resetForm() {
     setState(() {
       _selectedVehiculo = null;
-      _tipo = 'preventivo';
+      _tipo = 'Preventivo';
       _descripcionController.clear();
       _fecha = DateTime.now();
       _costoController.clear();
@@ -268,8 +268,8 @@ class _MantenimientosPageState extends State<MantenimientosPage> {
                       border: OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'preventivo', child: Text('Preventivo')),
-                      DropdownMenuItem(value: 'correctivo', child: Text('Correctivo')),
+                      DropdownMenuItem(value: 'Preventivo', child: Text('Preventivo')),
+                      DropdownMenuItem(value: 'Correctivo', child: Text('Correctivo')),
                     ],
                     onChanged: (value) => setState(() => _tipo = value!),
                   ),
@@ -352,7 +352,7 @@ class _MantenimientosPageState extends State<MantenimientosPage> {
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: mantenimiento.tipo == 'preventivo' 
+              backgroundColor: mantenimiento.tipo == 'Preventivo' 
                 ? Colors.green 
                 : Colors.orange,
               child: const Icon(Icons.build, color: Colors.white),

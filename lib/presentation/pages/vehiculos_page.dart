@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/vehiculo.dart';
 import '../../domain/entities/linea.dart';
 import '../widgets/common_widgets.dart';
@@ -25,7 +25,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
   int? _editingId;
   
   final _patenteController = TextEditingController();
-  // Marca se elimina por solicitud
+  final _marcaController = TextEditingController();
   final _modeloController = TextEditingController();
   final _capacidadController = TextEditingController();
   final _anioController = TextEditingController(text: DateTime.now().year.toString());
@@ -90,6 +90,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
 
     final data = {
       'patente': _patenteController.text,
+      'marca': _marcaController.text.isEmpty ? null : _marcaController.text,
       'modelo': _modeloController.text.isEmpty ? null : _modeloController.text,
       'capacidad': int.parse(_capacidadController.text),
       'anio': int.parse(_anioController.text),
@@ -126,6 +127,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
     setState(() {
       _editingId = vehiculo.id;
       _patenteController.text = vehiculo.patente;
+      _marcaController.text = vehiculo.marca ?? '';
       _modeloController.text = vehiculo.modelo ?? '';
       _capacidadController.text = vehiculo.capacidad.toString();
       _anioController.text = vehiculo.anio?.toString() ?? '';
@@ -175,6 +177,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
   void _resetForm() {
     setState(() {
       _patenteController.clear();
+      _marcaController.clear();
       _modeloController.clear();
       _capacidadController.clear();
       _anioController.text = DateTime.now().year.toString();
@@ -327,6 +330,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
           headingRowColor: MaterialStateProperty.all(const Color(0xFF34495e)),
           columns: const [
             DataColumn(label: Text('Patente', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Marca', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Modelo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Capacidad', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Año', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -336,6 +340,7 @@ class _VehiculosPageState extends State<VehiculosPage> {
             return DataRow(
               cells: [
                 DataCell(Text(vehiculo.patente)),
+                DataCell(Text(vehiculo.marca ?? 'N/A')),
                 DataCell(Text(vehiculo.modelo ?? 'N/A')),
                 DataCell(Text(vehiculo.capacidad.toString())),
                 DataCell(Text(vehiculo.anio?.toString() ?? 'N/A')),

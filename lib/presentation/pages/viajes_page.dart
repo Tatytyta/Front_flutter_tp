@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import '../../src/lib/token_storage.dart';
-import '../../src/lib/datasources/crud_service.dart';
-import '../../src/config/api_constants.dart';
+import '../../core/utils/token_storage.dart';
+import '../../data/datasources/crud_service.dart';
+import '../../core/constants/api_constants.dart';
 import '../../domain/entities/viaje.dart';
 import '../../domain/entities/ruta.dart';
 import '../../domain/entities/vehiculo.dart';
@@ -29,7 +29,7 @@ class _ViajesPageState extends State<ViajesPage> {
   bool _showForm = false;
   int? _editingId;
   
-  String? _selectedRuta;
+  int? _selectedRuta;
   int? _selectedVehiculo;
   int? _selectedChofer;
   DateTime _fecha = DateTime.now();
@@ -233,7 +233,7 @@ class _ViajesPageState extends State<ViajesPage> {
     });
   }
 
-  String _getRutaNombre(String rutaId) {
+  String _getRutaNombre(int rutaId) {
     final ruta = _rutas.where((r) => r.id == rutaId).firstOrNull;
     return ruta?.nombre ?? 'N/A';
   }
@@ -314,7 +314,7 @@ class _ViajesPageState extends State<ViajesPage> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<int>(
               value: _selectedRuta,
               decoration: const InputDecoration(
                 labelText: 'Ruta *',

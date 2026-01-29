@@ -68,15 +68,22 @@ class _UsuariosPageState extends State<UsuariosPage> {
     }
   }
 
-  String _getRolLabel(User usuario) {
-    if (usuario.isSuperuser == true) return 'Superusuario';
-    if (usuario.isStaff == true) return 'Admin';
-    return 'Usuario';
+  List<String> _getRoles(User usuario) {
+    final roles = <String>[];
+    if (usuario.isSuperuser == true) roles.add('Superusuario');
+    if (usuario.isStaff == true) roles.add('Admin');
+    if (usuario.isChofer == true) roles.add('Chofer');
+    if (usuario.isAsistente == true) roles.add('Asistente');
+    if (roles.isEmpty) roles.add('Usuario');
+    return roles;
   }
 
   Color _getRolColor(User usuario) {
-    if (usuario.isSuperuser == true) return const Color(0xFFe74c3c);
-    if (usuario.isStaff == true) return const Color(0xFFe67e22);
+    // Prioridad de color por rol más alto
+    if (usuario.isSuperuser == true) return const Color(0xFFe74c3c); // rojo
+    if (usuario.isStaff == true) return const Color(0xFFe67e22);    // naranja
+    if (usuario.isChofer == true) return const Color(0xFF27ae60);   // verde
+    if (usuario.isAsistente == true) return const Color(0xFF2980b9); // azul
     return const Color(0xFF3498db);
   }
 
@@ -185,7 +192,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
                       border: Border.all(color: _getRolColor(usuario)),
                     ),
                     child: Text(
-                      _getRolLabel(usuario),
+                      _getRoles(usuario).join(' · '),
                       style: TextStyle(
                         color: _getRolColor(usuario),
                         fontWeight: FontWeight.bold,
